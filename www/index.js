@@ -5,10 +5,16 @@ const FPS = 60;
 const MS_PER_FRAME = 1000 / FPS;
 let frames = 0;
 
+let keys = new Set()
+
+document.body.addEventListener("keydown", (ev) => { keys.add(ev.key); }, false);
+document.body.addEventListener("keyup", (ev) => { keys.delete(ev.key); }, false);
+
 setScreen(canvas.width, canvas.height);
 
 
 function renderMap() {
+  keys.forEach((key) => { moveCamera(key); });
   ctx.putImageData(getPixels(), 0, 0);
 }
 

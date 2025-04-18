@@ -55,6 +55,8 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 	sin, cos := math.Sincos(rayAngle)
 	smallestY := screen.height
 
+	hasColorMap := gameMap.ColorMap != nil
+
 	for z := 1.0; z < RAY_DISTANCE; z++ {
 		y := int(z*sin + camera.y)
 		if y < 0 || y >= gameMap.Height {
@@ -77,9 +79,14 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		if heightOnScreen < smallestY {
 
 			for screenY := heightOnScreen; screenY < smallestY; screenY++ {
-
-				color := gameMap.ColorMap[y*gameMap.Width+x]
 				grayType := int(heightOnMap * HEIGHT_TO_COLOR)
+
+				var color [4]int
+				if hasColorMap {
+					color = gameMap.ColorMap[y*gameMap.Width+x]
+				} else {
+					color = [...]int{grayType, grayType, grayType, 255}
+				}
 
 				drawing[screenY*4] = (color[0] + grayType) / 2
 				drawing[screenY*4+1] = (color[1] + grayType) / 2

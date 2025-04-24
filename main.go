@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"syscall/js"
 )
@@ -11,17 +12,21 @@ import (
 func getPixels(gameMap *GameMap) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		data := make(chan result, screen.height)
-		pixels := make([]int, screen.height * screen.width * 4)
-		
+		pixels := make([]interface{}, screen.height*screen.width*4)
+
 		rayAngle := camera.angle - (FOV / 2)
-		for i := range screen.height {
-			go CastRay(i * screen.width * 4, gameMap, rayAngle, data)
+		for i := range screen.width {
+			go CastRay(i, gameMap, rayAngle, data)
 		}
 
 		for range screen.height {
 			line := <-data
 			for i, el := range line.value {
-				pixels[i+line.index] = el
+				index := i*screen.height + line.index
+				pixels[index*4] = el.R
+				pixels[index*4+1] = el.G
+				pixels[index*4+2] = el.B
+				pixels[index*4+3] = el.A
 			}
 		}
 
@@ -76,20 +81,20 @@ func moveCamera() js.Func {
 func main() {
 	noReturn := make(chan struct{})
 
+	data := js.Global().Get("gameMap")
 
-		data := js.Global().Get("gameMap")
+	var gameMap GameMap
 
-		var gameMap GameMap
+	err := json.Unmarshal([]byte(data.String()), &gameMap)
 
-		err := json.Unmarshal([]byte(data.String()), &gameMap)
-
-		if err != nil {
-			panic(err)
-		}
+	if err != nil {
+		panic(err)
+	}
 
 	js.Global().Set("getPixels", getPixels(&gameMap))
 	js.Global().Set("setScreen", setScreen())
 	js.Global().Set("moveCamera", moveCamera())
-	
+
 	<-noReturn
+	fmt.Println("here")
 }

@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"image/color"
+	"math"
+)
 
 const (
 	FOV             = math.Pi / 6
@@ -11,7 +14,7 @@ const (
 
 type result struct {
 	index int
-	value []int
+	value []color.RGBA
 }
 
 type Screen struct {
@@ -44,14 +47,14 @@ var camera = Camera{
 	y:        0,
 	angle:    math.Pi / 4,
 	pitch:    20,
-	vel:      3,
-	angleVel: 0.03,
+	vel:      1,
+	angleVel: 0.1,
 }
 
 var screen = Screen{width: 800, height: 450}
 
 func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
-	drawing := make([]int, screen.height*4)
+	drawing := make([]color.RGBA, screen.height)
 	sin, cos := math.Sincos(rayAngle)
 	smallestY := screen.height
 
@@ -64,14 +67,14 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		}
 
 		x := int(z*cos + camera.x)
-		if x < 0 || x < gameMap.Width {
+		if x < 0 || x >= gameMap.Width {
 			continue
 		}
 
 		// remove fish eye
 		depth := z * math.Cos(float64(camera.angle)-rayAngle)
 
-		heightMapIndex := (gameMap.Height-y)*gameMap.Height + x
+		heightMapIndex := y*gameMap.Height + x
 		heightOnMap := gameMap.HeightMap[heightMapIndex]
 		heightOnScreen := int((camera.height-float64(heightOnMap))/depth*SCALE_HEIGHT + camera.pitch)
 		heightOnScreen = max(heightOnScreen, 0)
@@ -79,19 +82,21 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		if heightOnScreen < smallestY {
 
 			for screenY := heightOnScreen; screenY < smallestY; screenY++ {
-				grayType := int(heightOnMap * HEIGHT_TO_COLOR)
+				grayType := int(heightOnMap)
 
-				var color [4]int
+				var colorOnMap [4]int
 				if hasColorMap {
-					color = gameMap.ColorMap[y*gameMap.Width+x]
+					colorOnMap = gameMap.ColorMap[y*gameMap.Width+x]
 				} else {
-					color = [...]int{grayType, grayType, grayType, 255}
+					colorOnMap = [...]int{grayType, grayType, grayType, 255}
 				}
 
-				drawing[screenY*4] = (color[0] + grayType) / 2
-				drawing[screenY*4+1] = (color[1] + grayType) / 2
-				drawing[screenY*4+2] = (color[2] + grayType) / 2
-				drawing[screenY*4+3] = color[3]
+				drawing[screenY] = color.RGBA{
+					uint8((colorOnMap[0] + grayType) / 2),
+					uint8((colorOnMap[1] + grayType) / 2),
+					uint8((colorOnMap[2] + grayType) / 2),
+					255,
+				}
 			}
 
 			smallestY = heightOnScreen

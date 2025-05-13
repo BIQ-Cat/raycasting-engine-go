@@ -8,7 +8,7 @@ import (
 const (
 	FOV             = math.Pi / 6
 	RAY_DISTANCE    = 2000
-	SCALE_HEIGHT    = 980
+	SCALE_HEIGHT    = 360
 	HEIGHT_TO_COLOR = 255 / 80
 )
 
@@ -46,9 +46,10 @@ var camera = Camera{
 	x:        0,
 	y:        0,
 	angle:    math.Pi / 4,
-	pitch:    20,
-	vel:      1,
-	angleVel: 0.1,
+	pitch:    -10,
+	vel:      5,
+	angleVel: 2,
+	height: 	150,
 }
 
 var screen = Screen{width: 800, height: 450}
@@ -59,6 +60,8 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 	smallestY := screen.height
 
 	hasColorMap := gameMap.ColorMap != nil
+
+	c := 0
 
 	for z := 1.0; z < RAY_DISTANCE; z++ {
 		y := int(z*sin + camera.y)
@@ -74,7 +77,7 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		// remove fish eye
 		depth := z * math.Cos(float64(camera.angle)-rayAngle)
 
-		heightMapIndex := y*gameMap.Height + x
+		heightMapIndex := y*gameMap.Width + x
 		heightOnMap := gameMap.HeightMap[heightMapIndex]
 		heightOnScreen := int((camera.height-float64(heightOnMap))/depth*SCALE_HEIGHT + camera.pitch)
 		heightOnScreen = max(heightOnScreen, 0)
@@ -82,25 +85,31 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		if heightOnScreen < smallestY {
 
 			for screenY := heightOnScreen; screenY < smallestY; screenY++ {
-				grayType := int(heightOnMap)
+				grayType := (int(heightOnMap) & 0xFF) * 2
 
 				var colorOnMap [4]int
 				if hasColorMap {
 					colorOnMap = gameMap.ColorMap[y*gameMap.Width+x]
 				} else {
-					colorOnMap = [...]int{grayType, grayType, grayType, 255}
+					if c % 2 == 0 {
+						colorOnMap = [4]int{0, 0xFF, 0, 255}
+					} else {
+						colorOnMap = [4]int{0xFF, 0xFF, 0xFF, 255}
+					}
+					// colorOnMap = [...]int{0, 0x98, 0xDA, 255}
 				}
 
 				drawing[screenY] = color.RGBA{
-					uint8((colorOnMap[0] + grayType) / 2),
-					uint8((colorOnMap[1] + grayType) / 2),
-					uint8((colorOnMap[2] + grayType) / 2),
+					uint8(min(0xFF, (colorOnMap[0] + grayType) / 2)),
+					uint8(min(0xFF, (colorOnMap[1] + grayType) / 2)),
+					uint8(min(0xFF, (colorOnMap[2] + grayType) / 2)),
 					255,
 				}
 			}
 
 			smallestY = heightOnScreen
 		}
+		c++
 	}
 
 	res <- result{index, drawing}

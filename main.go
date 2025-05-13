@@ -12,17 +12,20 @@ import (
 func getPixels(gameMap *GameMap) js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		data := make(chan result, screen.height)
-		pixels := make([]interface{}, screen.height*screen.width*4)
+		pixels := make([]any, screen.height*screen.width*4)
+
+		deltaAngle := screen.DeltaAngle()
 
 		rayAngle := camera.angle - (FOV / 2)
 		for i := range screen.width {
 			go CastRay(i, gameMap, rayAngle, data)
+			rayAngle += deltaAngle
 		}
 
-		for range screen.height {
+		for range screen.width {
 			line := <-data
 			for i, el := range line.value {
-				index := i*screen.height + line.index
+				index := i*screen.width + line.index
 				pixels[index*4] = el.R
 				pixels[index*4+1] = el.G
 				pixels[index*4+2] = el.B

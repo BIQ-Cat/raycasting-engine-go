@@ -48,7 +48,7 @@ var camera = Camera{
 	angle:    math.Pi / 4,
 	pitch:    -10,
 	vel:      5,
-	angleVel: 2,
+	angleVel: 0.05,
 	height: 	150,
 }
 

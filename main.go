@@ -58,11 +58,11 @@ func moveCamera() js.Func {
 			camera.x -= camera.vel * cos
 			camera.y -= camera.vel * sin
 		case "a":
-			camera.x += camera.vel * cos
-			camera.y -= camera.vel * sin
+			camera.x -= camera.vel * sin
+			camera.y += camera.vel * cos
 		case "d":
-			camera.x -= camera.vel * cos
-			camera.y += camera.vel * sin
+			camera.x += camera.vel * sin
+			camera.y -= camera.vel * cos
 		case "ArrowUp":
 			camera.pitch += camera.vel
 		case "ArrowDown":

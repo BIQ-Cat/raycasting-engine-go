@@ -55,9 +55,9 @@ var camera = Camera{
 	y:        0,
 	angle:    math.Pi / 4,
 	pitch:    -10,
-	vel:      5,
-	angleVel: 0.05,
-	height: 	150,
+	vel:      2,
+	angleVel: 0.02,
+	height:   150,
 }
 
 var screen = Screen{width: 800, height: 450}
@@ -67,7 +67,6 @@ func CastRay(index int, rayAngle float64) {
 	smallestY := screen.height
 
 	hasColorMap := gameMap.ColorMap != nil
-
 
 	c := 0
 
@@ -85,12 +84,10 @@ func CastRay(index int, rayAngle float64) {
 		// remove fish eye
 		depth := z * math.Cos(float64(camera.angle)-rayAngle)
 
-		heightMapIndex := y*gameMap.Width + x
+		heightMapIndex := (gameMap.Height-y-1)*gameMap.Width + x
 		heightOnMap := gameMap.HeightMap[heightMapIndex]
 		heightOnScreen := int((camera.height-float64(heightOnMap))/depth*SCALE_HEIGHT + camera.pitch)
 		heightOnScreen = max(heightOnScreen, 0)
-
-
 
 		if heightOnScreen < smallestY {
 
@@ -101,19 +98,19 @@ func CastRay(index int, rayAngle float64) {
 				if hasColorMap {
 					colorOnMap = gameMap.ColorMap[y*gameMap.Width+x]
 				} else {
-					if c % 2 == 0 {
+					if c%2 == 0 {
 						colorOnMap = [4]int{0, 0xFF, 0, 255}
 					} else {
 						colorOnMap = [4]int{0xFF, 0xFF, 0xFF, 255}
 					}
 					// colorOnMap = [...]int{0, 0x98, 0xDA, 255}
 				}
-				
-				pixelIndex := screenY * screen.width + index
 
-				buffer[pixelIndex*4] = uint8(min(0xFF, (colorOnMap[0] + grayType) / 2))
-				buffer[pixelIndex*4+1] = uint8(min(0xFF, (colorOnMap[1] + grayType) / 2))
-				buffer[pixelIndex*4+2] = uint8(min(0xFF, (colorOnMap[2] + grayType) / 2))
+				pixelIndex := screenY*screen.width + index
+
+				buffer[pixelIndex*4] = uint8(min(0xFF, (colorOnMap[0]+grayType)/2))
+				buffer[pixelIndex*4+1] = uint8(min(0xFF, (colorOnMap[1]+grayType)/2))
+				buffer[pixelIndex*4+2] = uint8(min(0xFF, (colorOnMap[2]+grayType)/2))
 				buffer[pixelIndex*4+3] = 255
 			}
 			smallestY = heightOnScreen

@@ -3,11 +3,12 @@ package main
 import (
 	"image/color"
 	"math"
+	"sync"
 )
 
 const (
 	FOV             = math.Pi / 6
-	RAY_DISTANCE    = 2000
+	RAY_DISTANCE    = 1000
 	SCALE_HEIGHT    = 360
 	HEIGHT_TO_COLOR = 255 / 80
 )
@@ -21,6 +22,11 @@ type Screen struct {
 	width  int
 	height int
 }
+
+const MAX_MAP_SIZE int = 1920 * 1080 * 4
+
+var mu sync.Mutex
+var buffer [MAX_MAP_SIZE]uint8
 
 func (s Screen) DeltaAngle() float64 {
 	return FOV / float64(s.width)
@@ -42,6 +48,8 @@ type GameMap struct {
 	ColorMap  [][4]int `json:"color_map,omitempty"`
 }
 
+var gameMap GameMap
+
 var camera = Camera{
 	x:        0,
 	y:        0,
@@ -54,12 +62,12 @@ var camera = Camera{
 
 var screen = Screen{width: 800, height: 450}
 
-func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
-	drawing := make([]color.RGBA, screen.height)
+func CastRay(index int, rayAngle float64) {
 	sin, cos := math.Sincos(rayAngle)
 	smallestY := screen.height
 
 	hasColorMap := gameMap.ColorMap != nil
+
 
 	c := 0
 
@@ -82,6 +90,8 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 		heightOnScreen := int((camera.height-float64(heightOnMap))/depth*SCALE_HEIGHT + camera.pitch)
 		heightOnScreen = max(heightOnScreen, 0)
 
+
+
 		if heightOnScreen < smallestY {
 
 			for screenY := heightOnScreen; screenY < smallestY; screenY++ {
@@ -98,19 +108,16 @@ func CastRay(index int, gameMap *GameMap, rayAngle float64, res chan<- result) {
 					}
 					// colorOnMap = [...]int{0, 0x98, 0xDA, 255}
 				}
+				
+				pixelIndex := screenY * screen.width + index
 
-				drawing[screenY] = color.RGBA{
-					uint8(min(0xFF, (colorOnMap[0] + grayType) / 2)),
-					uint8(min(0xFF, (colorOnMap[1] + grayType) / 2)),
-					uint8(min(0xFF, (colorOnMap[2] + grayType) / 2)),
-					255,
-				}
+				buffer[pixelIndex*4] = uint8(min(0xFF, (colorOnMap[0] + grayType) / 2))
+				buffer[pixelIndex*4+1] = uint8(min(0xFF, (colorOnMap[1] + grayType) / 2))
+				buffer[pixelIndex*4+2] = uint8(min(0xFF, (colorOnMap[2] + grayType) / 2))
+				buffer[pixelIndex*4+3] = 255
 			}
-
 			smallestY = heightOnScreen
 		}
 		c++
 	}
-
-	res <- result{index, drawing}
 }

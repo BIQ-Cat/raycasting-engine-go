@@ -53,7 +53,7 @@ func loadGameMap() js.Func {
 	})
 }
 
-func moveCamera() js.Func {
+func moveCameraByKey() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		sin, cos := math.Sincos(camera.angle)
 		switch args[0].String() {
@@ -87,11 +87,33 @@ func moveCamera() js.Func {
 	})
 }
 
+//export moveCameraByPerc
+func moveCameraByPerc(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, up bool, down bool) {
+	sin, cos := math.Sincos(camera.angle)
+
+	camera.x += perc_fb * camera.vel * cos
+	camera.y += perc_fb * camera.vel * sin
+	
+	camera.x -= perc_lr * camera.vel * sin
+	camera.y += perc_lr * camera.vel * cos
+
+	camera.angle += perc_angle * camera.angleVel
+	camera.pitch += perc_pitch * camera.vel * 2
+
+	if up {
+		camera.height += camera.vel
+	}
+
+	if down {
+		camera.height -= camera.vel
+	}
+}
+
 func main() {
 	noReturn := make(chan struct{})
 
 	js.Global().Set("loadGameMap", loadGameMap())
-	js.Global().Set("moveCamera", moveCamera())
+	js.Global().Set("moveCameraByKey", moveCameraByKey())
 
 	<-noReturn
 	fmt.Println("here")

@@ -9,10 +9,8 @@ import (
 	"syscall/js"
 )
 
-
-
-//export getPixels
-func getPixels() {
+//export loadPixels
+func loadPixels() {
 	deltaAngle := screen.DeltaAngle()
 
 	for i := range buffer {
@@ -23,7 +21,6 @@ func getPixels() {
 		CastRay(i, rayAngle)
 		rayAngle += deltaAngle
 	}
-
 
 }
 
@@ -42,7 +39,7 @@ func setScreen(width int, height int) {
 	}
 }
 
-func loadGameMap() js.Func {
+func setGameMap() js.Func {
 	return js.FuncOf(func(this js.Value, args []js.Value) any {
 		data := args[0].String()
 		if err := json.Unmarshal([]byte(data), &gameMap); err != nil {
@@ -53,49 +50,15 @@ func loadGameMap() js.Func {
 	})
 }
 
-func moveCameraByKey() js.Func {
-	return js.FuncOf(func(this js.Value, args []js.Value) any {
-		sin, cos := math.Sincos(camera.angle)
-		switch args[0].String() {
-		case "w":
-			camera.x += camera.vel * cos
-			camera.y += camera.vel * sin
-		case "s":
-			camera.x -= camera.vel * cos
-			camera.y -= camera.vel * sin
-		case "a":
-			camera.x += camera.vel * sin
-			camera.y -= camera.vel * cos
-		case "d":
-			camera.x -= camera.vel * sin
-			camera.y += camera.vel * cos
-		case "ArrowUp":
-			camera.pitch += camera.vel
-		case "ArrowDown":
-			camera.pitch -= camera.vel
-		case "ArrowLeft":
-			camera.angle -= camera.angleVel
-		case "ArrowRight":
-			camera.angle += camera.angleVel
-		case " ":
-			camera.height += camera.vel
-		case "Shift":
-			camera.height -= camera.vel
-		}
-
-		return js.ValueOf(true)
-	})
-}
-
-//export moveCameraByPerc
-func moveCameraByPerc(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, up bool, down bool) {
+//export moveCamera
+func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, up bool, down bool) {
 	sin, cos := math.Sincos(camera.angle)
 
 	camera.x += perc_fb * camera.vel * cos
 	camera.y += perc_fb * camera.vel * sin
-	
-	camera.x -= perc_lr * camera.vel * sin
-	camera.y += perc_lr * camera.vel * cos
+
+	camera.x += perc_lr * camera.vel * sin
+	camera.y -= perc_lr * camera.vel * cos
 
 	camera.angle += perc_angle * camera.angleVel
 	camera.pitch += perc_pitch * camera.vel * 2
@@ -112,8 +75,7 @@ func moveCameraByPerc(perc_fb float64, perc_lr float64, perc_angle float64, perc
 func main() {
 	noReturn := make(chan struct{})
 
-	js.Global().Set("loadGameMap", loadGameMap())
-	js.Global().Set("moveCameraByKey", moveCameraByKey())
+	js.Global().Set("loadGameMap", setGameMap())
 
 	<-noReturn
 	fmt.Println("here")

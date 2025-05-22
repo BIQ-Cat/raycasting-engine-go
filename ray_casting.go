@@ -1,9 +1,7 @@
 package main
 
 import (
-	"image/color"
 	"math"
-	"sync"
 )
 
 const (
@@ -13,11 +11,6 @@ const (
 	HEIGHT_TO_COLOR = 255 / 80
 )
 
-type result struct {
-	index int
-	value []color.RGBA
-}
-
 type Screen struct {
 	width  int
 	height int
@@ -25,7 +18,6 @@ type Screen struct {
 
 const MAX_MAP_SIZE int = 1920 * 1080 * 4
 
-var mu sync.Mutex
 var buffer [MAX_MAP_SIZE]uint8
 
 func (s Screen) DeltaAngle() float64 {

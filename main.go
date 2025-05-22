@@ -51,7 +51,7 @@ func setGameMap() js.Func {
 }
 
 //export moveCamera
-func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, up bool, down bool) {
+func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, perc_height float64) {
 	sin, cos := math.Sincos(camera.angle)
 
 	camera.x += perc_fb * camera.vel * cos
@@ -63,13 +63,7 @@ func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch
 	camera.angle += perc_angle * camera.angleVel
 	camera.pitch += perc_pitch * camera.vel * 2
 
-	if up {
-		camera.height += camera.vel
-	}
-
-	if down {
-		camera.height -= camera.vel
-	}
+	camera.height += perc_height * camera.vel
 }
 
 func main() {

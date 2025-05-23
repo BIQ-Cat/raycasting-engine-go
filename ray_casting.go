@@ -34,10 +34,52 @@ type Camera struct {
 }
 
 type GameMap struct {
-	Width     int      `json:"width,omitempty"`
-	Height    int      `json:"height,omitempty"`
-	HeightMap []int    `json:"height_map,omitempty"`
-	ColorMap  [][4]int `json:"color_map,omitempty"`
+	Width          int      `json:"width,omitempty"`
+	Height         int      `json:"height,omitempty"`
+	HeightMap      []int    `json:"height_map,omitempty"`
+	ColorMap       [][4]int `json:"color_map,omitempty"`
+	PassabilityMap []bool   `json:"passability_map,omitempty"`
+}
+
+func (g *GameMap) IsPassable(x int, y int) bool {
+	passabilityMapWidth := g.Width / 2
+	passabilityMapHeight := g.Height / 2
+
+	unusedSurfaceX := g.Width / 4
+	if x < unusedSurfaceX || x > (g.Width-unusedSurfaceX) {
+		return true
+	}
+
+	unusedSurfaceY := g.Height / 4
+	if x < unusedSurfaceY || x > (g.Height-unusedSurfaceY) {
+		return true
+	}
+
+	passX := x - unusedSurfaceX
+	passY := y - unusedSurfaceY
+
+	pass1 := true
+	pass2 := true
+	pass3 := true
+	pass4 := true
+
+	if passX != 0 && passY != 0 {
+		pass1 = g.PassabilityMap[(passY-1)*passabilityMapWidth+(passX-1)]
+	}
+
+	if passX != 0 && passY != passabilityMapHeight {
+		pass2 = g.PassabilityMap[(passY)*passabilityMapWidth+(passX-1)]
+	}
+
+	if passX != passabilityMapWidth && passY != 0 {
+		pass3 = g.PassabilityMap[(passY-1)*passabilityMapWidth+(passX)]
+	}
+
+	if passX != passabilityMapWidth && passY != passabilityMapHeight {
+		pass4 = g.PassabilityMap[(passY)*passabilityMapWidth+(passX)]
+	}
+
+	return pass1 && pass2 && pass3 && pass4
 }
 
 var gameMap GameMap
@@ -54,7 +96,7 @@ var camera = Camera{
 
 var screen = Screen{width: 800, height: 450}
 
-func CastRay(index int, rayAngle float64) {
+func CastRay(index int, rayAngle float64, showPassable bool) {
 	sin, cos := math.Sincos(rayAngle)
 	smallestY := screen.height
 
@@ -76,8 +118,9 @@ func CastRay(index int, rayAngle float64) {
 		// remove fish eye
 		depth := z * math.Cos(float64(camera.angle)-rayAngle)
 
-		heightMapIndex := (gameMap.Height-y-1)*gameMap.Width + x
-		heightOnMap := gameMap.HeightMap[heightMapIndex]
+		mapIndex := (gameMap.Height-y-1)*gameMap.Width + x
+
+		heightOnMap := gameMap.HeightMap[mapIndex]
 		heightOnScreen := int((camera.height-float64(heightOnMap))/depth*SCALE_HEIGHT + camera.pitch)
 		heightOnScreen = max(heightOnScreen, 0)
 
@@ -95,7 +138,14 @@ func CastRay(index int, rayAngle float64) {
 					} else {
 						colorOnMap = [4]int{0xFF, 0xFF, 0xFF, 255}
 					}
-					// colorOnMap = [...]int{0, 0x98, 0xDA, 255}
+				}
+
+				if showPassable && !gameMap.IsPassable(x, y) {
+					if c%2 == 0 {
+						colorOnMap = [4]int{0xFF, 0, 0, 255}
+					} else {
+						colorOnMap = [4]int{0xFF, 0xFF, 0xFF, 255}
+					}
 				}
 
 				pixelIndex := screenY*screen.width + index

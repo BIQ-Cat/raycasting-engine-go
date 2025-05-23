@@ -10,7 +10,7 @@ import (
 )
 
 //export loadPixels
-func loadPixels() {
+func loadPixels(showPassable bool) {
 	deltaAngle := screen.DeltaAngle()
 
 	for i := range buffer {
@@ -18,7 +18,7 @@ func loadPixels() {
 	}
 	rayAngle := camera.angle - (FOV / 2)
 	for i := range screen.width {
-		CastRay(i, rayAngle)
+		CastRay(i, rayAngle, showPassable)
 		rayAngle += deltaAngle
 	}
 

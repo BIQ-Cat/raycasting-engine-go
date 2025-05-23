@@ -69,7 +69,7 @@ func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch
 func main() {
 	noReturn := make(chan struct{})
 
-	js.Global().Set("loadGameMap", setGameMap())
+	js.Global().Set("setGameMap", setGameMap())
 
 	<-noReturn
 	fmt.Println("here")

@@ -42,21 +42,21 @@ type GameMap struct {
 }
 
 func (g *GameMap) IsPassable(x int, y int) bool {
-	passabilityMapWidth := g.Width / 2
-	passabilityMapHeight := g.Height / 2
+	passabilityMapWidth := (g.Width - 1) / 2
+	passabilityMapHeight := (g.Height - 1) / 2
 
 	unusedSurfaceX := g.Width / 4
-	if x < unusedSurfaceX || x > (g.Width-unusedSurfaceX) {
-		return true
+	if x < unusedSurfaceX || x >= (g.Width-unusedSurfaceX) {
+		return false
 	}
 
 	unusedSurfaceY := g.Height / 4
-	if x < unusedSurfaceY || x > (g.Height-unusedSurfaceY) {
-		return true
+	if y < unusedSurfaceY || y >= (g.Height-unusedSurfaceY) {
+		return false
 	}
 
 	passX := x - unusedSurfaceX
-	passY := y - unusedSurfaceY
+	passY := passabilityMapHeight - (y - unusedSurfaceY)
 
 	pass1 := true
 	pass2 := true
@@ -141,11 +141,7 @@ func CastRay(index int, rayAngle float64, showPassable bool) {
 				}
 
 				if showPassable && !gameMap.IsPassable(x, y) {
-					if c%2 == 0 {
-						colorOnMap = [4]int{0xFF, 0, 0, 255}
-					} else {
-						colorOnMap = [4]int{0xFF, 0xFF, 0xFF, 255}
-					}
+					colorOnMap = [4]int{0xFF, 0, 0, 255}
 				}
 
 				pixelIndex := screenY*screen.width + index

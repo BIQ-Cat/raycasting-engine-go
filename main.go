@@ -46,6 +46,7 @@ func setGameMap() js.Func {
 			return false
 		}
 
+		gameMap.PrepareMap()
 		return true
 	})
 }

@@ -1,4 +1,4 @@
-//go:build wasm
+//go:build js && wasm
 
 package main
 
@@ -10,18 +10,19 @@ import (
 )
 
 //export loadPixels
-func loadPixels(showPassable bool) {
+func loadPixels(i int, showPassable bool) {
 	deltaAngle := screen.DeltaAngle()
 
+	rayAngle := camera.angle - (FOV / 2) + deltaAngle*float64(i)
+
+	CastRay(i, rayAngle, showPassable)
+}
+
+//export clearBuffer
+func clearBuffer() {
 	for i := range buffer {
 		buffer[i] = 0
 	}
-	rayAngle := camera.angle - (FOV / 2)
-	for i := range screen.width {
-		CastRay(i, rayAngle, showPassable)
-		rayAngle += deltaAngle
-	}
-
 }
 
 //export getMemoryBufferPointer
@@ -52,19 +53,19 @@ func setGameMap() js.Func {
 }
 
 //export moveCamera
-func moveCamera(perc_fb float64, perc_lr float64, perc_angle float64, perc_pitch float64, perc_height float64) {
+func moveCamera(percFb float64, percLr float64, percAngle float64, percPitch float64, percHeight float64) {
 	sin, cos := math.Sincos(camera.angle)
 
-	camera.x += perc_fb * camera.vel * cos
-	camera.y += perc_fb * camera.vel * sin
+	camera.x += percFb * camera.vel * cos
+	camera.y += percFb * camera.vel * sin
 
-	camera.x += perc_lr * camera.vel * sin
-	camera.y -= perc_lr * camera.vel * cos
+	camera.x += percLr * camera.vel * sin
+	camera.y -= percLr * camera.vel * cos
 
-	camera.angle += perc_angle * camera.angleVel
-	camera.pitch += perc_pitch * camera.vel * 2
+	camera.angle += percAngle * camera.angleVel
+	camera.pitch += percPitch * camera.vel * 2
 
-	camera.height += perc_height * camera.vel
+	camera.height += percHeight * camera.vel
 }
 
 func main() {

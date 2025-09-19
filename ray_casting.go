@@ -34,13 +34,12 @@ type Camera struct {
 }
 
 type Points struct {
-	Flag  [][2]int `json:"flag,omitempty"`
-	Relic [][2]int `json:"relic,omitempty"`
-	Crit  [][2]int `json:"crit,omitempty"`
-	Spawn [][2]int `json:"spawn,omitempty"`
-	Slag  [][2]int `json:"slag,omitempty"`
+	Flag  [][2]int `json:"flag"`
+	Relic [][2]int `json:"relic"`
+	Crit  [][2]int `json:"crit"`
+	Spawn [][2]int `json:"spawn"`
+	Slag  [][2]int `json:"slag"`
 }
-
 
 type GameMap struct {
 	Width          int      `json:"width,omitempty"`
@@ -48,7 +47,7 @@ type GameMap struct {
 	HeightMap      []int    `json:"height_map,omitempty"`
 	ColorMap       [][4]int `json:"color_map,omitempty"`
 	PassabilityMap []bool   `json:"passability_map,omitempty"`
-	Points                  `json:"points,omitempty"`
+	Points         `json:"points"`
 }
 
 func (g *GameMap) IsPassable(x int, y int) bool {
@@ -101,7 +100,6 @@ func (g *GameMap) PrepareMap() {
 		}
 	}
 
-
 	if g.Crit != nil {
 		for _, critCoords := range g.Crit {
 			g.drawEntity(critCoords, centerX, centerY, CRIT_COLOR_MAP, CRIT_HEIGHT_MAP)
@@ -128,17 +126,27 @@ func (g *GameMap) PrepareMap() {
 }
 
 func (g *GameMap) drawEntity(entityCoords [2]int, centerX int, centerY int, entityColorMap [][][4]int, entityHeightMap [][]int) {
-	startX := centerX + entityCoords[0] / 2 - len(entityHeightMap[0]) / 2 - 1
-	startY := centerY + entityCoords[1] / 2 - len(entityHeightMap) / 2 - 1
+	startX := centerX + entityCoords[0]/2 - len(entityHeightMap[0])/2 - 1
+	startY := centerY + entityCoords[1]/2 - len(entityHeightMap)/2 - 1
 
-	for y := range(len(entityHeightMap)) {
-		for x := range(len(entityHeightMap[y])) {
-			g.HeightMap[(y + startY) * g.Width + (x + startX)] += entityHeightMap[y][x]
+	smallestHeight := math.Inf(1)
+
+	for y := range len(entityHeightMap) {
+		for x := range len(entityHeightMap[y]) {
+			height := g.HeightMap[(y+startY)*g.Width+(x+startX)]
+			smallestHeight = math.Min(float64(height), smallestHeight)
+			g.HeightMap[(y+startY)*g.Width+(x+startX)] = entityHeightMap[y][x]
 
 			color := entityColorMap[y][x]
 			if color[3] != 0 {
-				g.ColorMap[(g.Height - y - startY - 1) * g.Width + (x + startX)] = color
+				g.ColorMap[(g.Height-y-startY-1)*g.Width+(x+startX)] = color
 			}
+		}
+	}
+
+	for y := range len(entityHeightMap) {
+		for x := range len(entityHeightMap[y]) {
+			g.HeightMap[(y+startY)*g.Width+(x+startX)] += int(smallestHeight)
 		}
 	}
 }
